@@ -36,11 +36,16 @@ func NewReader(addr string) (*Reader, error) {
 
 	r := new(Reader)
 	r.conn = conn
+
 	return r, nil
 }
 
 func (r *Reader) Addr() string {
 	return r.conn.LocalAddr().String()
+}
+
+func (r *Reader) GetConnection() net.Conn {
+	return r.conn
 }
 
 // FIXME: this will discard data if p isn't big enough to hold the
@@ -152,7 +157,7 @@ func (r *Reader) readToMap() (msg map[string]interface{}, err error) {
 
 	for got := 0; got < 128 && (total == 0 || got < int(total)); got++ {
 		if n, err = r.conn.Read(cBuf); err != nil {
-			return nil, fmt.Errorf("Read: %s", err)
+			return nil, err
 		}
 		cHead, cBuf = cBuf[:2], cBuf[:n]
 
