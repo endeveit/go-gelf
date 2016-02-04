@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -61,10 +62,86 @@ func (r *Reader) Read(p []byte) (int, error) {
 	return strings.NewReader(data).Read(p)
 }
 
-func (r *Reader) ReadMessage() (*Message, error) {
+func (r *Reader) ReadMessage() (msg *Message, err error) {
+	var (
+		mapped map[string]interface{}
+		extra map[string]interface{} = make(map[string]interface{})
+	)
+
+	mapped, err = r.readToMap()
+
+	if err != nil {
+		return nil, err
+	}
+
+	msg = new(Message)
+
+	if val, ok := mapped["version"]; ok && val != nil {
+		msg.Version = val.(string)
+	}
+
+	if val, ok := mapped["host"]; ok && val != nil {
+		msg.Host = val.(string)
+	}
+
+	if val, ok := mapped["short_message"]; ok && val != nil {
+		msg.Short = val.(string)
+	}
+
+	if val, ok := mapped["full_message"]; ok && val != nil {
+		v := val.(string)
+
+		if len(v) > 0 {
+			msg.Full = v
+		}
+	}
+
+	if val, ok := mapped["timestamp"]; ok && val != nil {
+		switch val.(type) {
+		case string:
+			v, err := strconv.ParseFloat(val.(string), 64)
+			if err == nil {
+				msg.TimeUnix = v
+			}
+		case float64:
+			msg.TimeUnix = val.(float64)
+		}
+	}
+
+	if val, ok := mapped["level"]; ok && val != nil {
+		switch val.(type) {
+		case float64:
+			msg.Level = int32(val.(float64))
+		case int32:
+			msg.Level = val.(int32)
+		}
+	}
+
+	if val, ok := mapped["facility"]; ok && val != nil {
+		v := val.(string)
+
+		if len(v) > 0 {
+			msg.Facility = v
+		}
+	}
+
+	// Move fields started with underscore into "Extra"
+	for k, v := range mapped {
+		if strings.HasPrefix(k, "_") && v != nil {
+			extra[k[1:len(k)]] = v
+		}
+	}
+
+	if len(extra) > 0 {
+		msg.Extra = extra
+	}
+
+	return msg, nil
+}
+
+func (r *Reader) readToMap() (msg map[string]interface{}, err error) {
 	cBuf := make([]byte, ChunkSize)
 	var (
-		err        error
 		n, length  int
 		cid, ocid  []byte
 		seq, total uint8
@@ -131,7 +208,6 @@ func (r *Reader) ReadMessage() (*Message, error) {
 		return nil, fmt.Errorf("NewReader: %s", err)
 	}
 
-	msg := new(Message)
 	if err := json.NewDecoder(cReader).Decode(&msg); err != nil {
 		return nil, fmt.Errorf("json.Unmarshal: %s", err)
 	}

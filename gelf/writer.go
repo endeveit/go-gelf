@@ -54,7 +54,7 @@ type Message struct {
 	TimeUnix float64                `json:"timestamp"`
 	Level    int32                  `json:"level,omitempty"`
 	Facility string                 `json:"facility,omitempty"`
-	Extra    map[string]interface{} `json:"-"`
+	Extra    map[string]interface{} `json:"extra,omitempty"`
 	RawExtra json.RawMessage        `json:"-"`
 }
 
