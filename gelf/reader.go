@@ -70,7 +70,7 @@ func (r *Reader) Read(p []byte) (int, error) {
 func (r *Reader) ReadMessage() (msg *Message, err error) {
 	var (
 		mapped map[string]interface{}
-		extra map[string]interface{} = make(map[string]interface{})
+		extra  map[string]interface{} = make(map[string]interface{})
 	)
 
 	mapped, err = r.readToMap()
@@ -127,6 +127,23 @@ func (r *Reader) ReadMessage() (msg *Message, err error) {
 
 		if len(v) > 0 {
 			msg.Facility = v
+		}
+	}
+
+	if val, ok := mapped["file"]; ok && val != nil {
+		v := val.(string)
+
+		if len(v) > 0 {
+			msg.File = v
+		}
+	}
+
+	if val, ok := mapped["line"]; ok && val != nil {
+		switch val.(type) {
+		case float64:
+			msg.Line = int32(val.(float64))
+		case int32:
+			msg.Line = val.(int32)
 		}
 	}
 

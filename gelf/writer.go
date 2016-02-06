@@ -55,6 +55,8 @@ type Message struct {
 	Level    int32                  `json:"level,omitempty"`
 	Facility string                 `json:"facility,omitempty"`
 	Extra    map[string]interface{} `json:"extra,omitempty"`
+	File     string                 `json:"file,omitempty"`
+	Line     int32                  `json:"line,omitempty"`
 	RawExtra json.RawMessage        `json:"-"`
 }
 
@@ -408,6 +410,10 @@ func (m *Message) UnmarshalJSON(data []byte) error {
 			m.Level = int32(v.(float64))
 		case "facility":
 			m.Facility = v.(string)
+		case "file":
+			m.File = v.(string)
+		case "line":
+			m.Line = int32(v.(float64))
 		}
 	}
 	return nil
