@@ -128,7 +128,7 @@ func (w *Writer) writeChunked(zBytes []byte) (err error) {
 	b := make([]byte, 0, ChunkSize)
 	buf := bytes.NewBuffer(b)
 	nChunksI := numChunks(zBytes)
-	if nChunksI > 255 {
+	if nChunksI > 128 {
 		return fmt.Errorf("msg too large, would need %d chunks", nChunksI)
 	}
 	nChunks := uint8(nChunksI)
@@ -372,6 +372,10 @@ func (m *Message) MarshalJSONBuf(buf *bytes.Buffer) error {
 	}
 
 	if len(m.RawExtra) > 0 {
+		if err := buf.WriteByte(','); err != nil {
+			return err
+		}
+
 		// write serialized extra bytes, without enclosing quotes
 		if _, err = buf.Write(m.RawExtra[1 : len(m.RawExtra)-1]); err != nil {
 			return err

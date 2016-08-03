@@ -192,6 +192,7 @@ func TestExtraData(t *testing.T) {
 		Level:    6, // info
 		Facility: "writer_test",
 		Extra:    extra,
+		RawExtra: []byte(`{"woo": "hoo"}`),
 	}
 
 	for _, i := range []CompressType{CompressGzip, CompressZlib} {
